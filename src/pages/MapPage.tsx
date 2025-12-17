@@ -36,7 +36,7 @@ const MapPage: React.FC = () => {
     }, []);
 
     return (
-        <div className="h-screen w-full">
+        <div className="map-wrapper">
             <MapContainer 
                 center={center}
                 zoom={13}
