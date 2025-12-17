@@ -30,7 +30,7 @@ const MapPage: React.FC = () => {
     }, []);
 
     return (
-        <div className="min-h-screen">
+        <div className="h-screen w-full">
             <MapContainer 
                 center={center}
                 zoom={13}
