@@ -34,8 +34,7 @@ const MapPage: React.FC = () => {
             <MapContainer 
                 center={center}
                 zoom={13}
-                
-                className="h-screen w-full"
+                className="h-full w-full"
             >
                 <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
