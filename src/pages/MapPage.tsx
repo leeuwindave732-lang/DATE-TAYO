@@ -40,6 +40,7 @@ const MapPage: React.FC = () => {
             <MapContainer 
                 center={center}
                 zoom={13}
+                scrollWheelZoom={true}
                 className="h-full w-full"
             >
                 <TileLayer
