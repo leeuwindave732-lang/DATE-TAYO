@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button";
+import Navbar from "../components/navbar";
 
 const HomePage: React.FC = () => {
     return (
