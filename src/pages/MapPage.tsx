@@ -37,6 +37,7 @@ const MapPage: React.FC = () => {
 
     return (
         <div className="map-wrapper">
+            {isClient && (
             <MapContainer 
                 center={center}
                 zoom={13}
@@ -53,6 +54,7 @@ const MapPage: React.FC = () => {
                     </Marker>
                 ))}            
             </MapContainer>
+            )}
         </div>
         );
     };
