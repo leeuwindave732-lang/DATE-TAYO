@@ -38,8 +38,8 @@ const MapPage: React.FC = () => {
                 className="h-screen w-full"
             >
                 <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution="&copy; OpenStreetMap contributors"
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
                 {locations.map((user) => (
                     <Marker key={user.id} position={[user.latitude, user.longitude]}>
