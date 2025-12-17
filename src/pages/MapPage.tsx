@@ -18,7 +18,7 @@ const MapPage: React.FC = () => {
     useEffect(() =>{
         const fetchLocations = async () => {
             const { data, error } = await supabase
-            .from("user_location")
+            .from("user_locations")
             .select("*");
 
             if (!error && data) {
@@ -42,7 +42,7 @@ const MapPage: React.FC = () => {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
                 {locations.map((user) => (
-                    <Marker key={user.id} position={[user.latitude, user.longitude]}>
+                    <Marker key={user.id} position={[user.latitude, user.longitude] as LatLngExpression}>
                         <Popup>{user.name}</Popup>
                     </Marker>
                 ))}            
