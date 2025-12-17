@@ -19,7 +19,11 @@ const MapPage: React.FC = () => {
     useEffect(() => {
         setIsClient(true);
     }, []);
-
+    
+    useEffect(() => {
+        console.log("Supabase URL:", import.meta.env.VITE_SUPABASE_URL);
+        console.log("Supabase Key:", import.meta.env.VITE_SUPABASE_ANON_KEY);
+    }, []);
 
     useEffect(() =>{
         const fetchLocations = async () => {
