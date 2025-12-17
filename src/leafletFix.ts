@@ -1,12 +1,11 @@
 import * as L from "leaflet";
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import iconUrl from "leaflet/dist/images/marker-icon.png";
+import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
-L.Icon.Default.mergeOptions ({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-
+L.Icon.Default.mergeOptions({
+    iconUrl,
+    shadowUrl,
+    iconRetinaUrl: iconUrl,
 });
-
