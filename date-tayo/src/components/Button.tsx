@@ -1,5 +1,5 @@
 interface ButtonProps {
-    label: String;
+    label: string;
     onClick?: () => void;
     type?: "button" | "submit";
 }
