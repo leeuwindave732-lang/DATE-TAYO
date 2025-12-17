@@ -14,6 +14,12 @@ const center: LatLngExpression = [14.5995, 120.9842];
 
 const MapPage: React.FC = () => {
     const [locations, setLocations] = useState<UserLocation[]>([]);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
 
     useEffect(() =>{
         const fetchLocations = async () => {
