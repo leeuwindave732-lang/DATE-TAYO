@@ -1,61 +1,30 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { supabase } from "../supabaseClient";
-import { useNavigate } from "react-router-dom";
 import Input from "../components/input";
 import Button from "../components/Button";
 
-const ResetPasswordPage: React.FC = () => {
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
+const ResetRequestPage: React.FC = () => {
+    const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
-    const [accessToken, setAccessToken] = useState<string | null>(null);
-    const [refreshToken, setRefreshToken] = useState<string | null>(null);
 
-    useEffect(() => {
-        const hash = window.location.hash;
-        const params = new URLSearchParams(hash.replace("#", ""));
-        const token = params.get("access_token");
-        const refresh = params.get("refresh_token");
-        setAccessToken(token);
-        setRefreshToken(refresh);
-
-        if (!token || !refresh) {
-            alert("Invalid or expired link");
-            navigate("/auth");
-        }
-    }, [navigate]);
-
-    const handleResetPassword = async () => {
-        if (!password || password !== confirmPassword) {
-            alert("Passwords do not match or are empty");
-            return;
-        }
-
-        if (!accessToken || !refreshToken) {
-            alert("Invalid or expired link");
+    const handleResetRequest = async () => {
+        const emailTrimmed = email.trim();
+        if (!emailTrimmed) {
+            alert("Please enter your email");
             return;
         }
 
         setLoading(true);
         try {
-            // Log in with the access token and refresh token
-            const { error: sessionError } = await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken,
+            const { error } = await supabase.auth.resetPasswordForEmail(emailTrimmed, {
+                // Redirect URL must point to your frontend ResetPasswordPage
+                redirectTo: `${import.meta.env.VITE_APP_URL}/reset-password`,
             });
 
-            if (sessionError) throw sessionError;
+            if (error) throw error;
 
-            // Update password
-            const { error: updateError } = await supabase.auth.updateUser({
-                password,
-            });
-
-            if (updateError) throw updateError;
-
-            alert("Password updated successfully!");
-            navigate("/auth");
+            alert("Check your email for the password reset link!");
+            setEmail(""); // Clear input after sending
         } catch (err: any) {
             console.error(err);
             alert(err.message);
@@ -67,25 +36,20 @@ const ResetPasswordPage: React.FC = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans">
             <div className="w-full max-w-sm p-8 bg-white rounded-2xl shadow-lg flex flex-col gap-6">
-                <h1 className="text-3xl font-bold text-center text-gray-800">Set New Password</h1>
+                <h1 className="text-3xl font-bold text-center text-gray-800">Reset Password</h1>
 
                 <Input
-                    type="password"
-                    placeholder="New Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-                <Input
-                    type="password"
-                    placeholder="Confirm Password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    type="email"
+                    placeholder="Your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-gray-50 border border-gray-300 text-gray-800 placeholder-gray-400 rounded-lg p-3 focus:ring-2 focus:ring-blue-400"
                 />
 
                 <Button
-                    label={loading ? "Saving..." : "Reset Password"}
+                    label={loading ? "Sending..." : "Send Reset Link"}
                     fullWidth
-                    onClick={handleResetPassword}
+                    onClick={handleResetRequest}
                     disabled={loading}
                 />
             </div>
@@ -93,4 +57,4 @@ const ResetPasswordPage: React.FC = () => {
     );
 };
 
-export default ResetPasswordPage;
+export default ResetRequestPage;
