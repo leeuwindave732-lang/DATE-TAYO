@@ -2,19 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { compressImage, compressImages } from "../utils/compressImage";
-import { uploadImage } from "../utils/uploadImage";
+import { saveProfile } from "../utils/saveProfile";
 import Button from "../components/Button";
 import { Home, MapPin, MessageCircle, Settings, Plus, Grid, Bookmark } from "lucide-react";
-
-interface ProfileImage {
-    id: string;
-    image_url: string;
-}
 
 interface GalleryFile {
     file: File | null;
     preview: string;
-    id?: string; // existing images from Supabase will have an ID
+    id?: string;
 }
 
 const ProfilePage: React.FC = () => {
@@ -29,6 +24,7 @@ const ProfilePage: React.FC = () => {
 
     const navigate = useNavigate();
 
+    // Load profile and gallery
     useEffect(() => {
         const loadProfile = async () => {
             const { data, error } = await supabase.auth.getUser();
@@ -58,7 +54,7 @@ const ProfilePage: React.FC = () => {
 
             if (images) {
                 setGallery(
-                    images.map((img: ProfileImage) => ({
+                    images.map((img: any) => ({
                         file: null,
                         preview: img.image_url,
                         id: img.id,
@@ -74,6 +70,7 @@ const ProfilePage: React.FC = () => {
     const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
         try {
             const compressed = await compressImage(file);
 
@@ -112,55 +109,30 @@ const ProfilePage: React.FC = () => {
         setGallery(updated);
     };
 
-    const saveProfile = async () => {
+    // Save profile
+    const handleSaveProfile = async () => {
         if (!user) return;
+
         setLoading(true);
         setMessage(null);
 
-        try {
-            let avatarLink = avatarUrl;
+        const result = await saveProfile({
+            userId: user.id,
+            name,
+            bio,
+            avatarFile,
+            galleryFiles: gallery,
+        });
 
-            // Upload avatar if changed
-            if (avatarFile) {
-                const uploadedAvatar = await uploadImage(avatarFile, `${user.id}/avatar`);
-                avatarLink = uploadedAvatar.url; // use .url
-            }
-
-            // Upsert profile info
-            const { error: profileError } = await supabase.from("profiles").upsert({
-                id: user.id,
-                name,
-                bio,
-                avatar_url: avatarLink,
-            });
-            if (profileError) throw profileError;
-
-            // Upload gallery images
-            const uploads: { profile_id: string; image_url: string }[] = [];
-            for (const item of gallery) {
-                if (item.file) {
-                    const uploadedImage = await uploadImage(
-                        item.file,
-                        `${user.id}/gallery/${crypto.randomUUID()}`
-                    );
-                    uploads.push({ profile_id: user.id, image_url: uploadedImage.url }); // use .url
-                }
-            }
-
-            if (uploads.length > 0) {
-                const { error: galleryError } = await supabase.from("profile_images").insert(uploads);
-                if (galleryError) console.error("Gallery insert failed:", galleryError);
-            }
-
+        if (result.success) {
             setMessage({ text: "Profile updated successfully!", type: "success" });
             navigate("/profile-page");
-        } catch (err) {
-            console.error(err);
-            setMessage({ text: "Failed to update profile.", type: "error" });
-        } finally {
-            setLoading(false);
-            setTimeout(() => setMessage(null), 5000); // auto-hide message
+        } else {
+            setMessage({ text: `Failed to save profile: ${result.error}`, type: "error" });
         }
+
+        setLoading(false);
+        setTimeout(() => setMessage(null), 5000);
     };
 
     const logout = async () => {
@@ -202,7 +174,12 @@ const ProfilePage: React.FC = () => {
                     <div className="flex flex-col gap-3 sm:gap-4 text-center sm:text-left">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                             <h2 className="text-xl sm:text-2xl font-semibold">{name || "username"}</h2>
-                            <Button label={loading ? "Saving..." : "Save Profile"} className="bg-sage-300 text-black border border-black w-full sm:w-auto" onClick={saveProfile} disabled={loading} />
+                            <Button
+                                label={loading ? "Saving..." : "Save Profile"}
+                                className="bg-sage-300 text-black border border-black w-full sm:w-auto"
+                                onClick={handleSaveProfile}
+                                disabled={loading}
+                            />
                         </div>
                         <div className="flex justify-center sm:justify-start gap-6 text-sm">
                             <span><b>{gallery.length}</b> posts</span>
