@@ -104,7 +104,7 @@ const Profile: React.FC = () => {
             <div className="w-full max-w-xl bg-white p-6 rounded-xl shadow-md flex flex-col gap-4">
                 <h1 className="text-2xl font-bold text-center">Your Profile</h1>
 
-                <Input type="email" value={user.email} disabled className="bg-gray-100" onChange={function (e: React.ChangeEvent<HTMLInputElement>): void {
+                <Input type="email" value={user.email} disabled className="bg-gray-100" onChange={function (_e: React.ChangeEvent<HTMLInputElement>): void {
                     throw new Error("Function not implemented.");
                 }} />
 

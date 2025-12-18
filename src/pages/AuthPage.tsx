@@ -39,21 +39,21 @@ const AuthPage: React.FC = () => {
         try {
             if (isLogin) {
                 if (passwordTrimmed) {
-                    const { data, error } = await supabase.auth.signInWithPassword({
+                    const { error } = await supabase.auth.signInWithPassword({
                         email: emailTrimmed,
                         password: passwordTrimmed,
                     });
                     if (error) throw error;
                     navigate("/profile");
                 } else {
-                    const { data, error } = await supabase.auth.signInWithOtp({
+                    const { error } = await supabase.auth.signInWithOtp({
                         email: emailTrimmed,
                     });
                     if (error) throw error;
                     alert("Check your email for the login link!");
                 }
             } else {
-                const { data, error } = await supabase.auth.signUp({
+                const { error } = await supabase.auth.signUp({
                     email: emailTrimmed,
                     password: passwordTrimmed,
                     options: { emailRedirectTo: import.meta.env.VITE_APP_URL + "/profile", },
