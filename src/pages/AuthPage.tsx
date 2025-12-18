@@ -11,13 +11,12 @@ const AuthPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // Listen to auth changes
     useEffect(() => {
-        const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) navigate("/profile");
-        });
-
-        return () => listener.subscription.unsubscribe();
+        };
+        checkSession();
     }, [navigate]);
 
     const handleAuth = async () => {
@@ -26,13 +25,13 @@ const AuthPage: React.FC = () => {
             if (isLogin) {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
-                // auth listener will redirect
+                navigate("/profile"); // redirect after login
             } else {
                 const { error } = await supabase.auth.signUp({ email, password });
                 if (error) throw error;
 
                 alert(
-                    "Signup successful! Check your inbox or spam folder for the confirmation email."
+                    "Signup successful! Please check your inbox or spam folder for the confirmation email."
                 );
                 setIsLogin(true);
             }

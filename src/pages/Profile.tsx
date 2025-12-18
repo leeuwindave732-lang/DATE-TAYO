@@ -1,7 +1,8 @@
+// Profile.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { compressImage } from "../utils/compressImage";
+import { compressImage, compressImages } from "../utils/compressImage";
 import Input from "../components/input";
 import Button from "../components/Button";
 
@@ -26,13 +27,8 @@ const Profile: React.FC = () => {
             }
             setUser(user);
 
-            // fetch profile
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("*")
-                .eq("id", user.id)
-                .single();
-
+            // Fetch profile
+            const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
             if (profile) {
                 setName(profile.name || "");
                 setBio(profile.bio || "");
@@ -43,18 +39,18 @@ const Profile: React.FC = () => {
     }, [navigate]);
 
     const uploadImage = async (file: File, path: string) => {
-        const compressed = await compressImage(file);
-        const { error } = await supabase.storage.from("profiles").upload(path, compressed, { upsert: true });
+        const compressedFile = await compressImage(file); // compress before upload
+        const { error } = await supabase.storage.from("profiles").upload(path, compressedFile, { upsert: true });
         if (error) throw error;
-
         const { data } = supabase.storage.from("profiles").getPublicUrl(path);
         return data.publicUrl;
     };
 
-    const handleGalleryChange = (files: FileList | null) => {
-        const selected = Array.from(files || []);
-        setGallery(selected);
-        setGalleryPreviews(selected.map(file => URL.createObjectURL(file)));
+    const handleGalleryChange = async (files: FileList | null) => {
+        if (!files) return;
+        const compressedFiles = await compressImages(files);
+        setGallery(compressedFiles);
+        setGalleryPreviews(compressedFiles.map(f => URL.createObjectURL(f)));
     };
 
     const saveProfile = async () => {
@@ -95,7 +91,7 @@ const Profile: React.FC = () => {
 
                 <Input type="email" value={user.email} disabled className="bg-gray-100" onChange={function (e: React.ChangeEvent<HTMLInputElement>): void {
                     throw new Error("Function not implemented.");
-                } } />
+                }} />
                 <Input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
                 <textarea
                     className="w-full p-2 rounded border mb-2"
@@ -106,11 +102,18 @@ const Profile: React.FC = () => {
 
                 <label className="font-semibold">Avatar</label>
                 {avatarPreview && <img src={avatarPreview} className="w-24 h-24 rounded-full object-cover mb-2" />}
-                <input type="file" accept="image/*" onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    setAvatar(file);
-                    if (file) setAvatarPreview(URL.createObjectURL(file));
-                }} />
+                <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                        const file = e.target.files?.[0] || null;
+                        if (file) {
+                            const compressed = await compressImage(file);
+                            setAvatar(compressed);
+                            setAvatarPreview(URL.createObjectURL(compressed));
+                        }
+                    }}
+                />
 
                 <label className="font-semibold mt-2">Gallery</label>
                 <div className="flex gap-2 overflow-x-auto mb-2">
