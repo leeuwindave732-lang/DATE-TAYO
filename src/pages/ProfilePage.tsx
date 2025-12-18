@@ -125,7 +125,7 @@ const ProfilePage: React.FC = () => {
                     <div className="flex flex-col gap-3 sm:gap-4 text-center sm:text-left">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                             <h2 className="text-xl sm:text-2xl font-semibold">{name || "username"}</h2>
-                            <Button label="Edit profile" className="bg-white text-black border border-black w-full sm:w-auto" />
+                            <Button label="Edit profile" className="bg-sage-300 text-black border border-black w-full sm:w-auto" />
                         </div>
 
                         <div className="flex justify-center sm:justify-start gap-6 text-sm">
