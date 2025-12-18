@@ -1,26 +1,31 @@
 import React from "react";
+// ...existing code...
 
-interface ButtonProps {
+type ButtonProps = {
     label: string;
-    onClick?: () => void | Promise<void>; // allow async functions
+    onClick?: (e?: React.MouseEvent<HTMLButtonElement>) => void;
     fullWidth?: boolean;
-    disabled?: boolean; // add disabled prop
-    className?: string; // optional extra styling
-}
+    disabled?: boolean;
+    className?: string;
+    variant?: "primary" | "secondary";
+};
 
-const Button: React.FC<ButtonProps> = ({ label, onClick, fullWidth, disabled, className }) => (
-    <button
-        onClick={onClick}
-        disabled={disabled}
-        className={`
-            bg-accent hover:bg-accentHover text-white px-6 py-2 rounded-lg transition
-            ${fullWidth ? "w-full" : ""}
-            ${disabled ? "bg-gray-400 cursor-not-allowed hover:bg-gray-400" : ""}
-            ${className || ""}
-        `}
-    >
-        {label}
-    </button>
-);
+const Button: React.FC<ButtonProps> = ({ label, onClick, fullWidth, disabled, className = "", variant = "primary" }) => {
+    const base = "px-4 py-2 rounded-lg font-semibold focus:outline-none";
+    const widthClass = fullWidth ? "w-full" : "inline-block";
+    const variantClass = variant === "secondary"
+        ? "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+        : "bg-indigo-600 text-white hover:bg-indigo-700";
+
+    return (
+        <button
+            className={`${base} ${widthClass} ${variantClass} ${className}`}
+            onClick={onClick}
+            disabled={disabled}
+        >
+            {label}
+        </button>
+    );
+};
 
 export default Button;

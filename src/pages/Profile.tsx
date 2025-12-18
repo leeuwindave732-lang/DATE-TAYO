@@ -14,20 +14,17 @@ const Profile: React.FC = () => {
     const [gallery, setGallery] = useState<File[]>([]);
     const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState<{ text: string; type: "error" | "success" } | null>(null);
 
     const navigate = useNavigate();
 
     useEffect(() => {
         const loadUser = async () => {
             const { data: { user }, error } = await supabase.auth.getUser();
-            if (error || !user) {
-                navigate("/auth");
-                return;
-            }
+            if (error || !user) return navigate("/auth");
             setUser(user);
 
-            // Load profile
-            const { data: profile, error: profileError } = await supabase
+            const { data: profile } = await supabase
                 .from("profiles")
                 .select("*")
                 .eq("id", user.id)
@@ -38,18 +35,22 @@ const Profile: React.FC = () => {
                 setBio(profile.bio || "");
                 setAvatarPreview(profile.avatar_url || null);
             }
-            if (profileError) console.error(profileError);
         };
         loadUser();
     }, [navigate]);
 
     const uploadImage = async (file: File, path: string) => {
-        const compressedFile = await compressImage(file);
-        const { error } = await supabase.storage.from("profiles").upload(path, compressedFile, { upsert: true });
-        if (error) throw error;
-
-        const { data } = supabase.storage.from("profiles").getPublicUrl(path);
-        return data.publicUrl;
+        try {
+            const compressed = await compressImage(file);
+            const fileName = path.endsWith(".jpg") ? path : path + ".jpg";
+            const { error } = await supabase.storage.from("profiles").upload(fileName, compressed, { upsert: true });
+            if (error) throw error;
+            const { data } = supabase.storage.from("profiles").getPublicUrl(fileName);
+            return data.publicUrl;
+        } catch (err: any) {
+            console.error("Upload failed:", err);
+            throw new Error("Failed to upload image. Check your bucket permissions or file size.");
+        }
     };
 
     const handleGalleryChange = async (files: FileList | null) => {
@@ -59,16 +60,26 @@ const Profile: React.FC = () => {
         setGalleryPreviews(compressedFiles.map(f => URL.createObjectURL(f)));
     };
 
+    const removeGalleryImage = (index: number) => {
+        const newGallery = [...gallery];
+        const newPreviews = [...galleryPreviews];
+        newGallery.splice(index, 1);
+        newPreviews.splice(index, 1);
+        setGallery(newGallery);
+        setGalleryPreviews(newPreviews);
+    };
+
     const saveProfile = async () => {
         if (!user) return;
         setLoading(true);
+        setMessage(null);
+
         try {
             let avatarUrl = avatarPreview;
             if (avatar) {
                 avatarUrl = await uploadImage(avatar, `${user.id}/avatar.jpg`);
             }
 
-            // Upsert profile
             const { error: profileError } = await supabase.from("profiles").upsert({
                 id: user.id,
                 name,
@@ -77,70 +88,131 @@ const Profile: React.FC = () => {
             });
             if (profileError) throw profileError;
 
-            // Upload gallery
             for (const file of gallery) {
                 const imageUrl = await uploadImage(file, `${user.id}/gallery/${crypto.randomUUID()}.jpg`);
                 const { error: imgError } = await supabase.from("profile_images").insert({
                     profile_id: user.id,
                     image_url: imageUrl,
                 });
-                if (imgError) console.error("Gallery image insert error:", imgError);
+                if (imgError) console.error("Gallery insert error:", imgError);
             }
 
             setAvatarPreview(avatarUrl || null);
-            alert("Profile saved!");
-        } catch (err: any) {
+            setMessage({ text: "Profile saved!", type: "success" });
+        } catch (err) {
             console.error(err);
-            alert("Failed to save profile. Try again.");
+            setMessage({ text: "Failed to save profile.", type: "error" });
         } finally {
             setLoading(false);
         }
     };
 
+    const logout = async () => {
+        await supabase.auth.signOut();
+        navigate("/auth");
+    };
+
     if (!user) return null;
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 font-sans flex justify-center">
-            <div className="w-full max-w-xl bg-white p-6 rounded-xl shadow-md flex flex-col gap-4">
-                <h1 className="text-2xl font-bold text-center">Your Profile</h1>
+        <div className="min-h-screen bg-white flex justify-center items-start py-12 font-main">
+            <div className="w-full max-w-sm bg-[#9CAF88] rounded-2xl shadow-md p-6 flex flex-col gap-4">
+                <h1 className="text-2xl font-semibold text-black text-center">Profile</h1>
 
-                <Input type="email" value={user.email} disabled className="bg-gray-100" onChange={function (_e: React.ChangeEvent<HTMLInputElement>): void {
-                    throw new Error("Function not implemented.");
-                }} />
+                {message && (
+                    <div
+                        className={`text-center text-sm font-medium p-2 rounded ${message.type === "error" ? "bg-red-100 text-red-700" : "bg-black text-white"
+                            }`}
+                    >
+                        {message.text}
+                    </div>
+                )}
 
-                <Input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+                {/* Avatar */}
+                <div className="flex flex-col items-center gap-2">
+                    {avatarPreview && (
+                        <img
+                            src={avatarPreview}
+                            className="w-24 h-24 rounded-full object-cover border-2 border-black"
+                        />
+                    )}
+                    <input
+                        type="file"
+                        accept="image/*"
+                        className="text-black"
+                        onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                                const compressed = await compressImage(file);
+                                setAvatar(compressed);
+                                setAvatarPreview(URL.createObjectURL(compressed));
+                            }
+                        }}
+                    />
+                </div>
 
+                {/* Name */}
+                <Input
+                    type="text"
+                    placeholder="Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="border-2 border-black rounded-md text-black bg-white"
+                />
+
+                {/* Bio */}
                 <textarea
-                    className="w-full p-2 rounded border mb-2"
+                    className="w-full p-3 rounded-md border-2 border-black focus:outline-none focus:ring-1 focus:ring-black resize-none text-black bg-white"
                     placeholder="Bio"
                     value={bio}
+                    rows={3}
                     onChange={(e) => setBio(e.target.value)}
                 />
 
-                <label className="font-semibold">Avatar</label>
-                {avatarPreview && <img src={avatarPreview} className="w-24 h-24 rounded-full object-cover mb-2" />}
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={async (e) => {
-                        const file = e.target.files?.[0] || null;
-                        if (file) {
-                            const compressed = await compressImage(file);
-                            setAvatar(compressed);
-                            setAvatarPreview(URL.createObjectURL(compressed));
-                        }
-                    }}
-                />
-
-                <label className="font-semibold mt-2">Gallery</label>
-                <div className="flex gap-2 overflow-x-auto mb-2">
-                    {galleryPreviews.map((src, i) => (
-                        <img key={i} src={src} className="w-24 h-24 object-cover rounded" />
-                    ))}
+                {/* Gallery */}
+                <div>
+                    <label className="block font-medium text-black mb-1">Gallery</label>
+                    <div className="flex gap-2 overflow-x-auto mb-2">
+                        {galleryPreviews.map((src, i) => (
+                            <div key={i} className="relative">
+                                <img
+                                    src={src}
+                                    className="w-16 h-16 rounded-md object-cover border-2 border-black"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeGalleryImage(i)}
+                                    className="absolute -top-2 -right-2 bg-black text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="text-black"
+                        onChange={(e) => handleGalleryChange(e.target.files)}
+                    />
                 </div>
-                <input type="file" accept="image/*" multiple onChange={(e) => handleGalleryChange(e.target.files)} />
 
-                <Button label={loading ? "Saving..." : "Save Profile"} fullWidth onClick={saveProfile} disabled={loading} />
+                {/* Buttons */}
+                <Button
+                    label={loading ? "Saving..." : "Save"}
+                    fullWidth
+                    onClick={saveProfile}
+                    disabled={loading}
+                    className="bg-white text-black hover:bg-black hover:text-white border-2 border-black"
+                />
+                <Button
+                    label="Logout"
+                    fullWidth
+                    variant="secondary"
+                    onClick={logout}
+                    className="border-2 border-black text-black hover:bg-black hover:text-white"
+                />
             </div>
         </div>
     );
