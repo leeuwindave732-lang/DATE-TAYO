@@ -56,7 +56,7 @@ const AuthPage: React.FC = () => {
                 const { data, error } = await supabase.auth.signUp({
                     email: emailTrimmed,
                     password: passwordTrimmed,
-                    options: { emailRedirectTo: window.location.origin + "/profile" },
+                    options: { emailRedirectTo: import.meta.env.VITE_APP_URL + "/profile", },
                 });
                 if (error) throw error;
                 alert("Signup successful! Please check your inbox for confirmation email.");

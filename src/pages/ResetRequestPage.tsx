@@ -17,7 +17,7 @@ const ResetRequestPage: React.FC = () => {
         setLoading(true);
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(emailTrimmed, {
-                redirectTo: window.location.origin + "/reset-password",
+                redirectTo: import.meta.env.VITE_APP_URL + "/reset-password",
             });
             if (error) throw error;
             alert("Check your email for the password reset link!");
