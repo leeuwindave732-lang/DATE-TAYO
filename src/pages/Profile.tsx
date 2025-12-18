@@ -1,4 +1,3 @@
-// Profile.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
@@ -19,29 +18,36 @@ const Profile: React.FC = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const checkUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
+        const loadUser = async () => {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) {
                 navigate("/auth");
                 return;
             }
             setUser(user);
 
-            // Fetch profile
-            const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+            // Load profile
+            const { data: profile, error: profileError } = await supabase
+                .from("profiles")
+                .select("*")
+                .eq("id", user.id)
+                .single();
+
             if (profile) {
                 setName(profile.name || "");
                 setBio(profile.bio || "");
                 setAvatarPreview(profile.avatar_url || null);
             }
+            if (profileError) console.error(profileError);
         };
-        checkUser();
+        loadUser();
     }, [navigate]);
 
     const uploadImage = async (file: File, path: string) => {
-        const compressedFile = await compressImage(file); // compress before upload
+        const compressedFile = await compressImage(file);
         const { error } = await supabase.storage.from("profiles").upload(path, compressedFile, { upsert: true });
         if (error) throw error;
+
         const { data } = supabase.storage.from("profiles").getPublicUrl(path);
         return data.publicUrl;
     };
@@ -58,23 +64,32 @@ const Profile: React.FC = () => {
         setLoading(true);
         try {
             let avatarUrl = avatarPreview;
-            if (avatar) avatarUrl = await uploadImage(avatar, `${user.id}/avatar.jpg`);
+            if (avatar) {
+                avatarUrl = await uploadImage(avatar, `${user.id}/avatar.jpg`);
+            }
 
-            await supabase.from("profiles").upsert({
+            // Upsert profile
+            const { error: profileError } = await supabase.from("profiles").upsert({
                 id: user.id,
                 name,
                 bio,
                 avatar_url: avatarUrl,
             });
+            if (profileError) throw profileError;
 
+            // Upload gallery
             for (const file of gallery) {
                 const imageUrl = await uploadImage(file, `${user.id}/gallery/${crypto.randomUUID()}.jpg`);
-                await supabase.from("profile_images").insert({ profile_id: user.id, image_url: imageUrl });
+                const { error: imgError } = await supabase.from("profile_images").insert({
+                    profile_id: user.id,
+                    image_url: imageUrl,
+                });
+                if (imgError) console.error("Gallery image insert error:", imgError);
             }
 
             setAvatarPreview(avatarUrl || null);
             alert("Profile saved!");
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             alert("Failed to save profile. Try again.");
         } finally {
@@ -92,7 +107,9 @@ const Profile: React.FC = () => {
                 <Input type="email" value={user.email} disabled className="bg-gray-100" onChange={function (e: React.ChangeEvent<HTMLInputElement>): void {
                     throw new Error("Function not implemented.");
                 }} />
+
                 <Input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+
                 <textarea
                     className="w-full p-2 rounded border mb-2"
                     placeholder="Bio"

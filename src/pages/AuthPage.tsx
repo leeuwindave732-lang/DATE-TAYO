@@ -11,10 +11,14 @@ const AuthPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // Automatically redirect if user is already logged in
+    // Redirect if already logged in
     useEffect(() => {
         const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) {
+                console.error("Session check error:", error);
+                return;
+            }
             if (session?.user) {
                 navigate("/profile");
             }
@@ -23,7 +27,10 @@ const AuthPage: React.FC = () => {
     }, [navigate]);
 
     const handleAuth = async () => {
-        if (!email || (!password && isLogin)) {
+        const emailTrimmed = email.trim();
+        const passwordTrimmed = password.trim();
+
+        if (!emailTrimmed || (!passwordTrimmed && isLogin)) {
             alert("Please enter email" + (isLogin ? " and password" : ""));
             return;
         }
@@ -31,22 +38,24 @@ const AuthPage: React.FC = () => {
         setLoading(true);
         try {
             if (isLogin) {
-                if (password) {
-                    // Try password login
-                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (passwordTrimmed) {
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email: emailTrimmed,
+                        password: passwordTrimmed,
+                    });
                     if (error) throw error;
                     navigate("/profile");
                 } else {
-                    // Password missing, fallback to magic link
-                    const { data, error } = await supabase.auth.signInWithOtp({ email });
+                    const { data, error } = await supabase.auth.signInWithOtp({
+                        email: emailTrimmed,
+                    });
                     if (error) throw error;
                     alert("Check your email for the login link!");
                 }
             } else {
-                // Sign Up
                 const { data, error } = await supabase.auth.signUp({
-                    email,
-                    password,
+                    email: emailTrimmed,
+                    password: passwordTrimmed,
                     options: { emailRedirectTo: window.location.origin + "/profile" },
                 });
                 if (error) throw error;
@@ -60,7 +69,6 @@ const AuthPage: React.FC = () => {
             setLoading(false);
         }
     };
-
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 font-sans p-4">
@@ -100,6 +108,17 @@ const AuthPage: React.FC = () => {
                     >
                         {isLogin ? "Sign Up" : "Login"}
                     </button>
+                    <p className="text-center text-gray-600 text-sm mt-2">
+                        {isLogin && (
+                            <button
+                                className="text-blue-500 font-semibold hover:underline"
+                                onClick={() => navigate("/reset-request")}
+                            >
+                                Forgot Password?
+                            </button>
+                        )}
+                    </p>
+
                 </p>
             </div>
         </div>

@@ -25,9 +25,6 @@ export const compressImage = (file: File, quality = 0.7, maxWidth = 800): Promis
     });
 };
 
-/**
- * Compress multiple files
- */
 export const compressImages = async (files: FileList | File[]): Promise<File[]> => {
     const compressed: File[] = [];
     for (const file of Array.from(files)) {

@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import Profile from './pages/Profile';
-import AuthPage from './pages/AuthPage'; // merged login/signup
+import AuthPage from './pages/AuthPage';
+import ResetRequestPage from './pages/ResetRequestPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProtectedRoute from './ProtectedRoute';
 
 function App() {
@@ -10,6 +12,10 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/auth" element={<AuthPage />} />
+
+        {/* Password Reset Flow */}
+        <Route path="/reset-request" element={<ResetRequestPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Protected Profile */}
         <Route
@@ -20,7 +26,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* Optional: view another user's profile */}
         <Route
           path="/profile/:id"
