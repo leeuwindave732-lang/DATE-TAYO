@@ -12,26 +12,12 @@ const ResetPasswordPage: React.FC = () => {
 
     useEffect(() => {
         const verifySession = async () => {
-            try {
-                // Check if there's a session after returning from the email link
-                const { data, error } = await supabase.auth.getSession();
-                if (error) {
-                    alert("Invalid or expired link");
-                    navigate("/auth");
-                    return;
-                }
-
-                if (!data.session) {
-                    alert("No active session found. Please request a new password reset link.");
-                    navigate("/auth");
-                }
-            } catch (err: any) {
-                console.error(err);
-                alert("Something went wrong. Please try again.");
+            const { data, error } = await supabase.auth.getSession();
+            if (error || !data.session) {
+                alert("Invalid or expired link");
                 navigate("/auth");
             }
         };
-
         verifySession();
     }, [navigate]);
 
