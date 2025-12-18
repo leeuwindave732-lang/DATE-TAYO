@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import Input from "../components/input";
@@ -9,15 +9,31 @@ const ResetPasswordPage: React.FC = () => {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const [accessToken, setAccessToken] = useState<string | null>(null);
 
     useEffect(() => {
-        // Get access_token from URL hash
-        const hash = window.location.hash;
-        const params = new URLSearchParams(hash.replace("#", ""));
-        const token = params.get("access_token");
-        setAccessToken(token);
-    }, []);
+        const verifySession = async () => {
+            try {
+                // Check if there's a session after returning from the email link
+                const { data, error } = await supabase.auth.getSession();
+                if (error) {
+                    alert("Invalid or expired link");
+                    navigate("/auth");
+                    return;
+                }
+
+                if (!data.session) {
+                    alert("No active session found. Please request a new password reset link.");
+                    navigate("/auth");
+                }
+            } catch (err: any) {
+                console.error(err);
+                alert("Something went wrong. Please try again.");
+                navigate("/auth");
+            }
+        };
+
+        verifySession();
+    }, [navigate]);
 
     const handleResetPassword = async () => {
         if (!password || password !== confirmPassword) {
@@ -25,26 +41,10 @@ const ResetPasswordPage: React.FC = () => {
             return;
         }
 
-        if (!accessToken) {
-            alert("Invalid or expired link");
-            return;
-        }
-
         setLoading(true);
         try {
-            // Use Supabase API to update password with access_token
-            const { error } = await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: "",
-            });
-
+            const { error } = await supabase.auth.updateUser({ password });
             if (error) throw error;
-
-            const { error: updateError } = await supabase.auth.updateUser({
-                password,
-            });
-
-            if (updateError) throw updateError;
 
             alert("Password updated successfully!");
             navigate("/auth");
