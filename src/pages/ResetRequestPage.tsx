@@ -17,14 +17,11 @@ const ResetRequestPage: React.FC = () => {
         setLoading(true);
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(emailTrimmed, {
-                // Redirect URL must point to your frontend ResetPasswordPage
                 redirectTo: `${import.meta.env.VITE_APP_URL}/reset-password`,
             });
-
             if (error) throw error;
-
             alert("Check your email for the password reset link!");
-            setEmail(""); // Clear input after sending
+            setEmail("");
         } catch (err: any) {
             console.error(err);
             alert(err.message);
@@ -34,16 +31,16 @@ const ResetRequestPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans">
-            <div className="w-full max-w-sm p-8 bg-white rounded-2xl shadow-lg flex flex-col gap-6">
-                <h1 className="text-3xl font-bold text-center text-gray-800">Reset Password</h1>
+        <div className="min-h-screen flex items-center justify-center bg-white p-4 font-sans">
+            <div className="w-full max-w-sm p-8 bg-white rounded-2xl shadow-lg flex flex-col gap-6 border border-sage-200">
+                <h1 className="text-3xl font-bold text-center text-black">Reset Password</h1>
 
                 <Input
                     type="email"
                     placeholder="Your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="bg-gray-50 border border-gray-300 text-gray-800 placeholder-gray-400 rounded-lg p-3 focus:ring-2 focus:ring-blue-400"
+                    className="bg-white border border-sage-300 text-black placeholder-sage-500 rounded-lg p-3 focus:ring-2 focus:ring-sage-400"
                 />
 
                 <Button
@@ -51,6 +48,7 @@ const ResetRequestPage: React.FC = () => {
                     fullWidth
                     onClick={handleResetRequest}
                     disabled={loading}
+                    className="bg-[#9CAF88] text-white hover:bg-[#88a678]"
                 />
             </div>
         </div>

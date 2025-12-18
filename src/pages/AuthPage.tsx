@@ -11,14 +11,9 @@ const AuthPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // Redirect if already logged in
     useEffect(() => {
         const checkSession = async () => {
             const { data: { session }, error } = await supabase.auth.getSession();
-            if (error) {
-                console.error("Session check error:", error);
-                return;
-            }
             if (session?.user) navigate("/profile");
         };
         checkSession();
@@ -36,7 +31,6 @@ const AuthPage: React.FC = () => {
         setLoading(true);
         try {
             if (isLogin) {
-                // Password login only
                 const { error } = await supabase.auth.signInWithPassword({
                     email: emailTrimmed,
                     password: passwordTrimmed,
@@ -44,7 +38,6 @@ const AuthPage: React.FC = () => {
                 if (error) throw error;
                 navigate("/profile");
             } else {
-                // Signup flow
                 const { error } = await supabase.auth.signUp({
                     email: emailTrimmed,
                     password: passwordTrimmed,
@@ -63,9 +56,9 @@ const AuthPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 font-sans p-4">
-            <div className="w-full max-w-sm p-8 bg-white rounded-2xl shadow-lg flex flex-col gap-6">
-                <h1 className="text-3xl font-bold text-center text-gray-800">
+        <div className="min-h-screen flex items-center justify-center bg-white p-4 font-sans">
+            <div className="w-full max-w-sm p-8 bg-white rounded-2xl shadow-lg flex flex-col gap-6 border border-sage-200">
+                <h1 className="text-3xl font-bold text-center text-black">
                     {isLogin ? "Login" : "Sign Up"}
                 </h1>
 
@@ -74,7 +67,7 @@ const AuthPage: React.FC = () => {
                     placeholder="Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="bg-gray-50 border border-gray-300 text-gray-800 placeholder-gray-400 rounded-lg p-3 focus:ring-2 focus:ring-blue-400"
+                    className="bg-white border border-sage-300 text-black placeholder-sage-500 rounded-lg p-3 focus:ring-2 focus:ring-sage-400"
                 />
 
                 <Input
@@ -82,7 +75,7 @@ const AuthPage: React.FC = () => {
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="bg-gray-50 border border-gray-300 text-gray-800 placeholder-gray-400 rounded-lg p-3 focus:ring-2 focus:ring-blue-400"
+                    className="bg-white border border-sage-300 text-black placeholder-sage-500 rounded-lg p-3 focus:ring-2 focus:ring-sage-400"
                 />
 
                 <Button
@@ -90,21 +83,22 @@ const AuthPage: React.FC = () => {
                     fullWidth
                     onClick={handleAuth}
                     disabled={loading}
+                    className="bg-[#9CAF88] text-white hover:bg-[#88a678]"
                 />
 
-                <div className="text-center mt-2 text-gray-600 text-sm">
+                <div className="text-center mt-2 text-black text-sm">
                     {isLogin ? (
                         <>
                             Don't have an account?{" "}
                             <button
-                                className="text-blue-500 font-semibold hover:underline"
+                                className="text-[#9CAF88] font-semibold hover:underline"
                                 onClick={() => setIsLogin(false)}
                             >
                                 Sign Up
                             </button>
                             <div className="mt-1">
                                 <button
-                                    className="text-blue-500 font-semibold hover:underline text-sm"
+                                    className="text-[#9CAF88] font-semibold hover:underline text-sm"
                                     onClick={() => navigate("/reset-request")}
                                 >
                                     Forgot Password?
@@ -115,7 +109,7 @@ const AuthPage: React.FC = () => {
                         <>
                             Already have an account?{" "}
                             <button
-                                className="text-blue-500 font-semibold hover:underline"
+                                className="text-[#9CAF88] font-semibold hover:underline"
                                 onClick={() => setIsLogin(true)}
                             >
                                 Login
