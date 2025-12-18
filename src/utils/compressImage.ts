@@ -11,21 +11,21 @@ export const compressImage = (file: File, quality = 0.7, maxWidth = 800): Promis
 
             const ctx = canvas.getContext("2d");
             if (!ctx) return reject(new Error("Canvas context not found"));
-
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-            canvas.toBlob((blob) => {
-                if (!blob) return reject(new Error("Compression failed"));
-
-                // Ensure file name ends with .jpg
-                const compressedFile = new File(
-                    [blob],
-                    file.name.replace(/\.[^/.]+$/, "") + ".jpg",
-                    { type: "image/jpeg" }
-                );
-
-                resolve(compressedFile);
-            }, "image/jpeg", quality);
+            canvas.toBlob(
+                (blob) => {
+                    if (!blob) return reject(new Error("Compression failed"));
+                    // Keep original extension
+                    const ext = file.name.split(".").pop() || "jpg";
+                    const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + "." + ext, {
+                        type: blob.type,
+                    });
+                    resolve(compressedFile);
+                },
+                "image/jpeg",
+                quality
+            );
         };
 
         img.onerror = (err) => reject(err);

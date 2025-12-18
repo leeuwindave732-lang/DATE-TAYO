@@ -1,27 +1,29 @@
 import { supabase } from "../supabaseClient";
 import { compressImage } from "./compressImage";
 
-export const uploadImage = async (file: File, path: string): Promise<string> => {
+interface UploadResult {
+    url: string;
+    path: string;
+    bucket: string;
+}
+
+export const uploadImage = async (file: File, path: string): Promise<UploadResult> => {
     try {
         const compressed = await compressImage(file);
 
-        // Ensure path ends with .jpg
-        const fileName = path.endsWith(".jpg") ? path : path + ".jpg";
+        const extension = file.name.split(".").pop() || "jpg";
+        const fileName = path.endsWith(`.${extension}`) ? path : `${path}.${extension}`;
+        const bucket = "UploadImages";
 
-        // Upload to Supabase Storage
-        const { error } = await supabase.storage.from("profiles").upload(fileName, compressed, { upsert: true });
-        if (error) {
-            console.error("Supabase upload error:", error);
-            throw error;
-        }
+        const { error: uploadError } = await supabase.storage.from(bucket).upload(fileName, compressed, { upsert: true });
+        if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
-        // Get public URL
-        const { data } = supabase.storage.from("profiles").getPublicUrl(fileName);
+        const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
         if (!data?.publicUrl) throw new Error("Failed to get public URL");
 
-        return data.publicUrl;
+        return { url: data.publicUrl, path: fileName, bucket };
     } catch (err: any) {
         console.error("Upload failed:", err);
-        throw new Error("Failed to upload image. Check your bucket permissions or file size.");
+        throw new Error(`Image upload failed: ${err.message}`);
     }
 };
