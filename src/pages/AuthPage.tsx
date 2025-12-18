@@ -11,39 +11,59 @@ const AuthPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
+    // Automatically redirect if user is already logged in
     useEffect(() => {
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) navigate("/profile");
+            if (session?.user) {
+                navigate("/profile");
+            }
         };
         checkSession();
     }, [navigate]);
 
     const handleAuth = async () => {
+        if (!email || (!password && isLogin)) {
+            alert("Please enter email" + (isLogin ? " and password" : ""));
+            return;
+        }
+
         setLoading(true);
         try {
             if (isLogin) {
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) throw error;
-                navigate("/profile"); // redirect after login
+                if (password) {
+                    // Try password login
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+                    navigate("/profile");
+                } else {
+                    // Password missing, fallback to magic link
+                    const { data, error } = await supabase.auth.signInWithOtp({ email });
+                    if (error) throw error;
+                    alert("Check your email for the login link!");
+                }
             } else {
-                const { error } = await supabase.auth.signUp({ email, password });
+                // Sign Up
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: { emailRedirectTo: window.location.origin + "/profile" },
+                });
                 if (error) throw error;
-
-                alert(
-                    "Signup successful! Please check your inbox or spam folder for the confirmation email."
-                );
+                alert("Signup successful! Please check your inbox for confirmation email.");
                 setIsLogin(true);
             }
         } catch (err: any) {
+            console.error(err);
             alert(err.message);
         } finally {
             setLoading(false);
         }
     };
 
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 font-sans p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 font-sans p-4">
             <div className="w-full max-w-sm p-8 bg-white rounded-2xl shadow-lg flex flex-col gap-6">
                 <h1 className="text-3xl font-bold text-center text-gray-800">
                     {isLogin ? "Login" : "Sign Up"}
