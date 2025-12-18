@@ -14,12 +14,10 @@ const AuthPage: React.FC = () => {
     // Listen to auth changes
     useEffect(() => {
         const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-            if (session?.user) navigate("/profile"); // redirect after login
+            if (session?.user) navigate("/profile");
         });
 
-        return () => {
-            listener.subscription.unsubscribe();
-        };
+        return () => listener.subscription.unsubscribe();
     }, [navigate]);
 
     const handleAuth = async () => {
@@ -28,11 +26,14 @@ const AuthPage: React.FC = () => {
             if (isLogin) {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
-                // Auth state listener will handle redirect
+                // auth listener will redirect
             } else {
                 const { error } = await supabase.auth.signUp({ email, password });
                 if (error) throw error;
-                alert("Signup successful! Please check your email to confirm your account.");
+
+                alert(
+                    "Signup successful! Check your inbox or spam folder for the confirmation email."
+                );
                 setIsLogin(true);
             }
         } catch (err: any) {
@@ -43,30 +44,41 @@ const AuthPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 font-sans p-4">
-            <div className="w-full max-w-sm p-6 bg-white rounded-xl shadow-md flex flex-col gap-6">
-                <h1 className="text-2xl font-bold text-center">{isLogin ? "Login" : "Sign Up"}</h1>
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 font-sans p-4">
+            <div className="w-full max-w-sm p-8 bg-white rounded-2xl shadow-lg flex flex-col gap-6">
+                <h1 className="text-3xl font-bold text-center text-gray-800">
+                    {isLogin ? "Login" : "Sign Up"}
+                </h1>
 
                 <Input
                     type="email"
                     placeholder="Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="mb-2"
+                    className="bg-gray-50 border border-gray-300 text-gray-800 placeholder-gray-400 rounded-lg p-3 focus:ring-2 focus:ring-blue-400"
                 />
+
                 <Input
                     type="password"
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="mb-2"
+                    className="bg-gray-50 border border-gray-300 text-gray-800 placeholder-gray-400 rounded-lg p-3 focus:ring-2 focus:ring-blue-400"
                 />
 
-                <Button label={loading ? "Processing..." : isLogin ? "Login" : "Sign Up"} fullWidth onClick={handleAuth} disabled={loading} />
+                <Button
+                    label={loading ? "Processing..." : isLogin ? "Login" : "Sign Up"}
+                    fullWidth
+                    onClick={handleAuth}
+                    disabled={loading}
+                />
 
-                <p className="text-center text-sm text-gray-500">
+                <p className="text-center text-gray-600 text-sm">
                     {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-                    <button className="text-blue-500 font-semibold" onClick={() => setIsLogin(!isLogin)}>
+                    <button
+                        className="text-blue-500 font-semibold hover:underline"
+                        onClick={() => setIsLogin(!isLogin)}
+                    >
                         {isLogin ? "Sign Up" : "Login"}
                     </button>
                 </p>
