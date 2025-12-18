@@ -204,7 +204,7 @@ const Profile: React.FC = () => {
                     fullWidth
                     onClick={saveProfile}
                     disabled={loading}
-                    className="bg-white text-black hover:bg-sage-300 hover:text-white border-2 border-black"
+                    className="bg-sage-300 text-black hover:bg-sage-300 hover:text-white border-2 border-black"
                 />
                 <Button
                     label="Logout"
