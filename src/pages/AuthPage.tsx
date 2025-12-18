@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import Input from "../components/input";
@@ -19,9 +19,7 @@ const AuthPage: React.FC = () => {
                 console.error("Session check error:", error);
                 return;
             }
-            if (session?.user) {
-                navigate("/profile");
-            }
+            if (session?.user) navigate("/profile");
         };
         checkSession();
     }, [navigate]);
@@ -38,28 +36,22 @@ const AuthPage: React.FC = () => {
         setLoading(true);
         try {
             if (isLogin) {
-                if (passwordTrimmed) {
-                    const { error } = await supabase.auth.signInWithPassword({
-                        email: emailTrimmed,
-                        password: passwordTrimmed,
-                    });
-                    if (error) throw error;
-                    navigate("/profile");
-                } else {
-                    const { error } = await supabase.auth.signInWithOtp({
-                        email: emailTrimmed,
-                    });
-                    if (error) throw error;
-                    alert("Check your email for the login link!");
-                }
+                // Password login only
+                const { error } = await supabase.auth.signInWithPassword({
+                    email: emailTrimmed,
+                    password: passwordTrimmed,
+                });
+                if (error) throw error;
+                navigate("/profile");
             } else {
+                // Signup flow
                 const { error } = await supabase.auth.signUp({
                     email: emailTrimmed,
                     password: passwordTrimmed,
-                    options: { emailRedirectTo: import.meta.env.VITE_APP_URL + "/profile", },
+                    options: { emailRedirectTo: import.meta.env.VITE_APP_URL + "/profile" },
                 });
                 if (error) throw error;
-                alert("Signup successful! Please check your inbox for confirmation email.");
+                alert("Signup successful! Please check your email to confirm.");
                 setIsLogin(true);
             }
         } catch (err: any) {
@@ -100,26 +92,37 @@ const AuthPage: React.FC = () => {
                     disabled={loading}
                 />
 
-                <p className="text-center text-gray-600 text-sm">
-                    {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-                    <button
-                        className="text-blue-500 font-semibold hover:underline"
-                        onClick={() => setIsLogin(!isLogin)}
-                    >
-                        {isLogin ? "Sign Up" : "Login"}
-                    </button>
-                    <p className="text-center text-gray-600 text-sm mt-2">
-                        {isLogin && (
+                <div className="text-center mt-2 text-gray-600 text-sm">
+                    {isLogin ? (
+                        <>
+                            Don't have an account?{" "}
                             <button
                                 className="text-blue-500 font-semibold hover:underline"
-                                onClick={() => navigate("/reset-request")}
+                                onClick={() => setIsLogin(false)}
                             >
-                                Forgot Password?
+                                Sign Up
                             </button>
-                        )}
-                    </p>
-
-                </p>
+                            <div className="mt-1">
+                                <button
+                                    className="text-blue-500 font-semibold hover:underline text-sm"
+                                    onClick={() => navigate("/reset-request")}
+                                >
+                                    Forgot Password?
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            Already have an account?{" "}
+                            <button
+                                className="text-blue-500 font-semibold hover:underline"
+                                onClick={() => setIsLogin(true)}
+                            >
+                                Login
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );
