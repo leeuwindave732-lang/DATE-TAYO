@@ -16,7 +16,14 @@ export const compressImage = (file: File, quality = 0.7, maxWidth = 800): Promis
 
             canvas.toBlob((blob) => {
                 if (!blob) return reject(new Error("Compression failed"));
-                const compressedFile = new File([blob], file.name, { type: "image/jpeg" });
+
+                // Ensure file name ends with .jpg
+                const compressedFile = new File(
+                    [blob],
+                    file.name.replace(/\.[^/.]+$/, "") + ".jpg",
+                    { type: "image/jpeg" }
+                );
+
                 resolve(compressedFile);
             }, "image/jpeg", quality);
         };

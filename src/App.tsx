@@ -5,6 +5,7 @@ import AuthPage from './pages/AuthPage';
 import ResetRequestPage from './pages/ResetRequestPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProtectedRoute from './ProtectedRoute';
+import ProfilePage  from './pages/ProfilePage';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/profile-page" element={<ProfilePage />} />
       </Routes>
     </Router>
   );

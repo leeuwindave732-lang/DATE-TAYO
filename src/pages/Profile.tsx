@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import { compressImage, compressImages } from "../utils/compressImage";
+import { uploadImage } from "../utils/uploadImage";
 import Input from "../components/input";
 import Button from "../components/Button";
 
@@ -39,20 +40,6 @@ const Profile: React.FC = () => {
         loadUser();
     }, [navigate]);
 
-    const uploadImage = async (file: File, path: string) => {
-        try {
-            const compressed = await compressImage(file);
-            const fileName = path.endsWith(".jpg") ? path : path + ".jpg";
-            const { error } = await supabase.storage.from("profiles").upload(fileName, compressed, { upsert: true });
-            if (error) throw error;
-            const { data } = supabase.storage.from("profiles").getPublicUrl(fileName);
-            return data.publicUrl;
-        } catch (err: any) {
-            console.error("Upload failed:", err);
-            throw new Error("Failed to upload image. Check your bucket permissions or file size.");
-        }
-    };
-
     const handleGalleryChange = async (files: FileList | null) => {
         if (!files) return;
         const compressedFiles = await compressImages(files);
@@ -75,11 +62,14 @@ const Profile: React.FC = () => {
         setMessage(null);
 
         try {
+            // Compress and upload avatar if exists
             let avatarUrl = avatarPreview;
             if (avatar) {
-                avatarUrl = await uploadImage(avatar, `${user.id}/avatar.jpg`);
+                const compressedAvatar = await compressImage(avatar);
+                avatarUrl = await uploadImage(compressedAvatar, `${user.id}/avatar.jpg`);
             }
 
+            // Upsert profile
             const { error: profileError } = await supabase.from("profiles").upsert({
                 id: user.id,
                 name,
@@ -88,8 +78,10 @@ const Profile: React.FC = () => {
             });
             if (profileError) throw profileError;
 
+            // Upload gallery images
             for (const file of gallery) {
-                const imageUrl = await uploadImage(file, `${user.id}/gallery/${crypto.randomUUID()}.jpg`);
+                const compressedFile = await compressImage(file);
+                const imageUrl = await uploadImage(compressedFile, `${user.id}/gallery/${crypto.randomUUID()}.jpg`);
                 const { error: imgError } = await supabase.from("profile_images").insert({
                     profile_id: user.id,
                     image_url: imageUrl,
@@ -99,6 +91,10 @@ const Profile: React.FC = () => {
 
             setAvatarPreview(avatarUrl || null);
             setMessage({ text: "Profile saved!", type: "success" });
+
+            // Redirect to ProfilePage after successful save
+            navigate("/profile-page");
+
         } catch (err) {
             console.error(err);
             setMessage({ text: "Failed to save profile.", type: "error" });
@@ -112,8 +108,6 @@ const Profile: React.FC = () => {
         navigate("/auth");
     };
 
-    if (!user) return null;
-
     return (
         <div className="min-h-screen bg-white flex justify-center items-start py-12 font-main">
             <div className="w-full max-w-sm bg-[#9CAF88] rounded-2xl shadow-md p-6 flex flex-col gap-4">
@@ -121,8 +115,9 @@ const Profile: React.FC = () => {
 
                 {message && (
                     <div
-                        className={`text-center text-sm font-medium p-2 rounded ${message.type === "error" ? "bg-red-100 text-red-700" : "bg-black text-white"
-                            }`}
+                        className={`text-center text-sm font-medium p-2 rounded ${
+                            message.type === "error" ? "bg-red-100 text-red-700" : "bg-black text-white"
+                        }`}
                     >
                         {message.text}
                     </div>
